@@ -1,0 +1,10 @@
+{
+  "name": "cc-dashboard-medium",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:server": "bun run server/index.ts",
+    "dev:client": "cd client && bun run dev",
+    "dev": "bun run dev:server & bun run dev:client"
+  }
+}
