@@ -1,5 +1,4 @@
-import { ref, watch } from 'vue';
-import type { StoryEvent } from '../types';
+import { ref } from 'vue';
 
 const connected = ref(false);
 let ws: WebSocket | null = null;

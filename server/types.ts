@@ -1,7 +1,7 @@
 // === JSONL Raw Types (파일에서 읽은 원본 구조) ===
 
 export interface JsonlEntry {
-  type: 'user' | 'assistant' | 'system' | 'file-history-snapshot';
+  type: 'user' | 'assistant' | 'system' | 'file-history-snapshot' | 'permission-mode' | 'attachment';
   subtype?: string;
   parentUuid: string | null;
   uuid: string;
@@ -96,6 +96,7 @@ export interface SessionDetail {
   isActive: boolean;
   tasks: Task[];
   subagents: SubAgentSummary[];
+  mainEvents: StoryEvent[];
 }
 
 export interface Task {
@@ -130,7 +131,7 @@ export interface SubAgentDetail extends SubAgentSummary {
 
 export interface StoryEvent {
   uuid: string;
-  type: 'thought' | 'tool_use' | 'tool_result' | 'system';
+  type: 'thought' | 'tool_use' | 'tool_result' | 'system' | 'thinking' | 'user_message' | 'agent_spawn' | 'agent_result';
   timestamp: string;
   // thought
   text?: string;
@@ -142,6 +143,12 @@ export interface StoryEvent {
   resultToolUseId?: string;
   content?: string;
   isError?: boolean;
+  // thinking
+  thinkingText?: string;
+  // agent_spawn / agent_result
+  agentType?: string;
+  // token usage (assistant 메시지)
+  tokenUsage?: TokenUsage;
 }
 
 // === WebSocket Messages ===
@@ -155,4 +162,6 @@ export type WsServerMessage =
   | { type: 'task_new'; sessionId: string; data: Task }
   | { type: 'agent_spawn'; sessionId: string; data: SubAgentSummary }
   | { type: 'agent_complete'; sessionId: string; agentId: string; data: Partial<SubAgentSummary> }
-  | { type: 'agent_event'; sessionId: string; agentId: string; data: StoryEvent };
+  | { type: 'agent_event'; sessionId: string; agentId: string; data: StoryEvent }
+  | { type: 'main_event'; sessionId: string; data: StoryEvent }
+  | { type: 'session_updated'; sessionId: string };

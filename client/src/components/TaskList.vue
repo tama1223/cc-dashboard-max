@@ -5,10 +5,12 @@ const props = defineProps<{
   tasks: Task[];
   subagents: SubAgentSummary[];
   selectedAgentId: string;
+  viewTarget: 'main' | 'subagent';
 }>();
 
 const emit = defineEmits<{
   'select-agent': [agentId: string];
+  'select-main': [];
 }>();
 
 // 서브에이전트가 있는 태스크만 필터 + 전체 서브에이전트 목록도 표시
@@ -47,6 +49,21 @@ function statusIcon(status: string): string {
 
 <template>
   <div class="flex-1 overflow-y-auto">
+    <!-- Main Session 항목 -->
+    <div
+      @click="emit('select-main')"
+      class="px-3 py-2 cursor-pointer border-l-2 transition-colors"
+      :class="viewTarget === 'main'
+        ? 'border-yellow-500 bg-yellow-950/20'
+        : 'border-transparent hover:bg-gray-900'"
+    >
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-yellow-500 shrink-0" />
+        <span class="text-sm font-bold text-yellow-400">Main Session</span>
+      </div>
+      <div class="text-xs text-gray-500 mt-0.5">메인 에이전트 타임라인</div>
+    </div>
+
     <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-950">
       Sub-Agents ({{ subagents.length }})
     </div>

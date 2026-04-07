@@ -4,6 +4,7 @@ import SessionList from './components/SessionList.vue';
 import TaskList from './components/TaskList.vue';
 import TaskDetail from './components/TaskDetail.vue';
 import StoryLine from './components/StoryLine.vue';
+import MainStoryLine from './components/MainStoryLine.vue';
 import { useSessionData } from './composables/useSessionData';
 import { useWebSocket } from './composables/useWebSocket';
 
@@ -20,7 +21,11 @@ const {
   selectProject,
   selectSession,
   selectAgent,
+  mainStoryEvents,
+  viewTarget,
   appendAgentEvent,
+  appendMainEvent,
+  selectMain,
   handleSessionUpdated,
 } = useSessionData();
 
@@ -38,6 +43,8 @@ onMounted(async () => {
       appendAgentEvent(msg.agentId, msg.data);
     } else if (msg.type === 'agent_spawn' || msg.type === 'agent_complete') {
       handleSessionUpdated(msg.sessionId);
+    } else if (msg.type === 'main_event') {
+      appendMainEvent(msg.data);
     }
   });
 
@@ -59,7 +66,7 @@ watch(selectedSessionId, (id) => {
   <div class="h-screen flex flex-col">
     <!-- 헤더 -->
     <header class="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center gap-3 shrink-0">
-      <h1 class="text-sm font-bold text-blue-400">CC Agent Dashboard</h1>
+      <h1 class="text-sm font-bold text-blue-400">CC Agent Dashboard Max</h1>
       <div
         class="w-2 h-2 rounded-full"
         :class="connected ? 'bg-green-500' : 'bg-red-500'"
@@ -93,7 +100,9 @@ watch(selectedSessionId, (id) => {
           :tasks="sessionDetail.tasks"
           :subagents="sessionDetail.subagents"
           :selected-agent-id="selectedAgentId"
+          :view-target="viewTarget"
           @select-agent="selectAgent"
+          @select-main="selectMain"
         />
       </div>
 
@@ -103,18 +112,28 @@ watch(selectedSessionId, (id) => {
           v-if="sessionDetail"
           :session="sessionDetail"
           :selected-agent-id="selectedAgentId"
+          :main-event-count="mainStoryEvents.length"
           @select-agent="selectAgent"
+          @select-main="selectMain"
         />
+        <!-- Main 스토리라인 -->
+        <MainStoryLine
+          v-if="viewTarget === 'main' && sessionDetail && mainStoryEvents.length > 0"
+          :events="mainStoryEvents"
+          :session="sessionDetail"
+          class="flex-1"
+        />
+        <!-- 서브에이전트 스토리라인 -->
         <StoryLine
-          v-if="agentDetail"
+          v-else-if="viewTarget === 'subagent' && agentDetail"
           :agent="agentDetail"
           class="flex-1"
         />
         <div
-          v-else-if="sessionDetail && !selectedAgentId"
+          v-else-if="sessionDetail && viewTarget === 'main' && mainStoryEvents.length === 0"
           class="flex-1 flex items-center justify-center text-gray-600"
         >
-          서브에이전트를 선택하세요
+          메인 세션 이벤트를 로딩 중...
         </div>
         <div
           v-else-if="!sessionDetail"

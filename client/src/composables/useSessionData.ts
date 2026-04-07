@@ -10,6 +10,8 @@ const selectedAgentId = ref<string>('');
 const sessionDetail = ref<SessionDetail | null>(null);
 const agentDetail = ref<SubAgentDetail | null>(null);
 const loading = ref(false);
+const mainStoryEvents = ref<StoryEvent[]>([]);
+const viewTarget = ref<'main' | 'subagent'>('main');
 
 const selectedProject = computed(() =>
   projects.value.find((p) => p.hash === selectedProjectHash.value) || null
@@ -40,6 +42,8 @@ export function useSessionData() {
     try {
       const res = await fetch(`${API_BASE}/session/${sessionId}`);
       sessionDetail.value = await res.json();
+      mainStoryEvents.value = sessionDetail.value?.mainEvents || [];
+      viewTarget.value = 'main';  // 세션 선택 시 기본 = Main
     } finally {
       loading.value = false;
     }
@@ -48,6 +52,7 @@ export function useSessionData() {
   async function selectAgent(agentId: string) {
     if (!selectedSessionId.value) return;
     selectedAgentId.value = agentId;
+    viewTarget.value = 'subagent';
     loading.value = true;
 
     try {
@@ -75,6 +80,16 @@ export function useSessionData() {
     }
   }
 
+  function selectMain() {
+    viewTarget.value = 'main';
+    selectedAgentId.value = '';
+    agentDetail.value = null;
+  }
+
+  function appendMainEvent(event: StoryEvent) {
+    mainStoryEvents.value.push(event);
+  }
+
   function handleSessionUpdated(sessionId: string) {
     if (selectedSessionId.value === sessionId) {
       selectSession(sessionId); // 리로드
@@ -94,7 +109,11 @@ export function useSessionData() {
     selectProject,
     selectSession,
     selectAgent,
+    mainStoryEvents,
+    viewTarget,
     appendAgentEvent,
+    appendMainEvent,
+    selectMain,
     handleSessionUpdated,
   };
 }

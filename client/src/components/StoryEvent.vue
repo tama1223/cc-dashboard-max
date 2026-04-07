@@ -120,4 +120,91 @@ function truncateResult(text: string): string {
       [system] {{ event.text }}
     </div>
   </div>
+
+  <!-- Thinking (Extended Thinking) -->
+  <div v-else-if="event.type === 'thinking'" class="flex gap-2 py-1.5">
+    <span class="text-xs text-gray-600 shrink-0 w-16 text-right font-mono">
+      {{ formatTime(event.timestamp) }}
+    </span>
+    <div
+      class="flex-1 rounded bg-purple-950/30 border border-purple-900/30 px-3 py-1.5 cursor-pointer"
+      @click="expanded = !expanded"
+    >
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs text-purple-400 font-bold">Thinking</span>
+        <span class="text-xs text-gray-500">
+          ({{ (event.thinkingText || '').length }} chars)
+        </span>
+        <span class="text-xs text-gray-600 ml-auto">{{ expanded ? '▼' : '▶' }}</span>
+      </div>
+      <div v-if="expanded" class="text-xs text-purple-300 mt-1.5 whitespace-pre-wrap max-h-96 overflow-y-auto">
+        {{ event.thinkingText }}
+      </div>
+      <div v-else class="text-xs text-purple-400/60 mt-0.5 truncate">
+        {{ (event.thinkingText || '').substring(0, 100) }}{{ (event.thinkingText || '').length > 100 ? '...' : '' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- User Message -->
+  <div v-else-if="event.type === 'user_message'" class="flex gap-2 py-1.5">
+    <span class="text-xs text-gray-600 shrink-0 w-16 text-right font-mono">
+      {{ formatTime(event.timestamp) }}
+    </span>
+    <div class="flex-1 rounded bg-green-950/30 border border-green-900/30 px-3 py-1.5">
+      <div class="flex items-center gap-1.5 mb-0.5">
+        <span class="text-xs font-bold text-green-400">You</span>
+      </div>
+      <div class="text-xs text-green-300 whitespace-pre-wrap">{{ event.text }}</div>
+    </div>
+  </div>
+
+  <!-- Agent Spawn -->
+  <div v-else-if="event.type === 'agent_spawn'" class="flex gap-2 py-1">
+    <span class="text-xs text-gray-600 shrink-0 w-16 text-right font-mono">
+      {{ formatTime(event.timestamp) }}
+    </span>
+    <div class="flex-1 rounded bg-amber-950/20 border border-amber-900/20 px-3 py-1.5">
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs font-mono font-bold text-amber-400">
+          Agent
+        </span>
+        <span class="text-xs text-amber-300">
+          Spawned {{ event.agentType || event.toolInput?.subagent_type || '' }}
+        </span>
+      </div>
+      <div v-if="event.toolInput?.description" class="text-xs text-gray-400 mt-0.5">
+        {{ event.toolInput.description }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent Result -->
+  <div v-else-if="event.type === 'agent_result'" class="flex gap-2 py-0.5">
+    <span class="text-xs text-gray-600 shrink-0 w-16 text-right font-mono">
+      {{ formatTime(event.timestamp) }}
+    </span>
+    <div
+      class="flex-1 rounded bg-teal-950/20 border border-teal-900/20 px-3 py-1 cursor-pointer"
+      @click="expanded = !expanded"
+    >
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs text-gray-600">{{ expanded ? '▼' : '▶' }}</span>
+        <span class="text-xs font-bold text-teal-400">
+          Agent {{ event.agentType }} completed
+        </span>
+        <span class="text-xs text-gray-500">
+          ({{ (event.content || '').length }} chars)
+        </span>
+      </div>
+      <pre
+        v-if="expanded"
+        class="text-xs text-gray-400 mt-1 whitespace-pre-wrap break-all max-h-64 overflow-y-auto"
+      >{{ event.content }}</pre>
+      <pre
+        v-else-if="event.content"
+        class="text-xs text-gray-500 mt-0.5 whitespace-pre-wrap truncate"
+      >{{ truncateResult(event.content || '') }}</pre>
+    </div>
+  </div>
 </template>

@@ -1,7 +1,7 @@
 import { DataStore } from './data-store';
 import { FileWatcher } from './file-watcher';
 
-const PORT = 4001;
+const PORT = 4002;
 
 const store = new DataStore();
 const watcher = new FileWatcher(store);

@@ -21,6 +21,7 @@ export interface SessionDetail {
   isActive: boolean;
   tasks: Task[];
   subagents: SubAgentSummary[];
+  mainEvents: StoryEvent[];
 }
 
 export interface Task {
@@ -55,7 +56,7 @@ export interface SubAgentDetail extends SubAgentSummary {
 
 export interface StoryEvent {
   uuid: string;
-  type: 'thought' | 'tool_use' | 'tool_result' | 'system';
+  type: 'thought' | 'tool_use' | 'tool_result' | 'system' | 'thinking' | 'user_message' | 'agent_spawn' | 'agent_result';
   timestamp: string;
   text?: string;
   toolName?: string;
@@ -64,4 +65,8 @@ export interface StoryEvent {
   resultToolUseId?: string;
   content?: string;
   isError?: boolean;
+  // thinking
+  thinkingText?: string;
+  // agent_spawn / agent_result
+  agentType?: string;
 }

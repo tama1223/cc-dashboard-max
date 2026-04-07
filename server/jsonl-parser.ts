@@ -78,6 +78,7 @@ export interface MainJsonlParsed {
   lastActivity: string;
   tasks: Task[];
   agentCompletions: Map<string, AgentCompletion>;
+  mainEvents: StoryEvent[];
 }
 
 export interface AgentCompletion {
@@ -96,6 +97,7 @@ export function parseMainJsonl(entries: JsonlEntry[]): MainJsonlParsed {
 
   const tasks: Task[] = [];
   const agentCompletions = new Map<string, AgentCompletion>();
+  const mainEvents: StoryEvent[] = [];
 
   // promptId → Task 매핑 (같은 턴의 agent spawn을 태스크에 연결)
   const promptToTask = new Map<string, Task>();
@@ -176,9 +178,117 @@ export function parseMainJsonl(entries: JsonlEntry[]): MainJsonlParsed {
 
       agentCompletions.set(tr.agentId!, completion);
     }
+
+    // 기존 tasks/agentCompletions 로직 후에: main StoryEvent 변환
+    const events = parseMainEntryToEvents(entry);
+    mainEvents.push(...events);
   }
 
-  return { slug, startTime, lastActivity, tasks, agentCompletions };
+  return { slug, startTime, lastActivity, tasks, agentCompletions, mainEvents };
+}
+
+// === 메인 JSONL 엔트리 → StoryEvent 변환 ===
+
+export function parseMainEntryToEvents(entry: JsonlEntry): StoryEvent[] {
+  // 서브에이전트(사이드체인) 메시지는 main 스토리라인에 포함하지 않음
+  if (entry.isSidechain) return [];
+
+  // user 타입 + content가 문자열 (사용자 프롬프트)
+  if (entry.type === 'user' && typeof entry.message?.content === 'string') {
+    return [{
+      type: 'user_message',
+      uuid: entry.uuid,
+      timestamp: entry.timestamp,
+      text: entry.message.content,
+    }];
+  }
+
+  // user 타입 + content가 배열 (tool_result 등)
+  if (entry.type === 'user' && Array.isArray(entry.message?.content)) {
+    const events: StoryEvent[] = [];
+    for (const block of entry.message!.content as ContentBlock[]) {
+      if (block.type === 'tool_result' && entry.toolUseResult?.agentId) {
+        // agent_result
+        events.push({
+          type: 'agent_result',
+          uuid: entry.uuid + '-agent-result',
+          timestamp: entry.timestamp,
+          agentType: entry.toolUseResult.agentType,
+          content: extractToolResultText(block.content),
+          tokenUsage: entry.toolUseResult.usage,
+        });
+      } else if (block.type === 'tool_result') {
+        // 일반 tool_result
+        events.push({
+          type: 'tool_result',
+          uuid: entry.uuid + '-result-' + block.tool_use_id,
+          timestamp: entry.timestamp,
+          resultToolUseId: block.tool_use_id,
+          content: extractToolResultText(block.content),
+          isError: block.is_error || false,
+        });
+      }
+    }
+    return events;
+  }
+
+  // assistant 타입 + content 배열
+  if (entry.type === 'assistant' && Array.isArray(entry.message?.content)) {
+    const events: StoryEvent[] = [];
+    for (const block of entry.message!.content as ContentBlock[]) {
+      if (block.type === 'thinking') {
+        if (block.thinking && block.thinking !== '') {
+          events.push({
+            type: 'thinking',
+            uuid: entry.uuid + '-thinking',
+            timestamp: entry.timestamp,
+            thinkingText: block.thinking,
+          });
+        }
+        // 빈 thinking 블록은 무시
+      } else if (block.type === 'text' && block.text) {
+        events.push({
+          type: 'thought',
+          uuid: entry.uuid + '-text',
+          timestamp: entry.timestamp,
+          text: block.text,
+        });
+      } else if (block.type === 'tool_use' && block.name === 'Agent') {
+        events.push({
+          type: 'agent_spawn',
+          uuid: entry.uuid + '-' + (block.id || 'agent'),
+          timestamp: entry.timestamp,
+          toolName: 'Agent',
+          toolInput: summarizeToolInput('Agent', block.input || {}),
+          toolUseId: block.id,
+          agentType: block.input?.subagent_type || 'general-purpose',
+        });
+      } else if (block.type === 'tool_use') {
+        events.push({
+          type: 'tool_use',
+          uuid: entry.uuid + '-' + (block.id || 'tool'),
+          timestamp: entry.timestamp,
+          toolName: block.name || 'unknown',
+          toolInput: summarizeToolInput(block.name || '', block.input || {}),
+          toolUseId: block.id,
+        });
+      }
+    }
+    return events;
+  }
+
+  // system 타입
+  if (entry.type === 'system') {
+    return [{
+      type: 'system',
+      uuid: entry.uuid,
+      timestamp: entry.timestamp,
+      text: (entry as any).content || entry.subtype || 'system',
+    }];
+  }
+
+  // 나머지 (permission-mode, file-history-snapshot, attachment)
+  return [];
 }
 
 // === 서브에이전트 JSONL 파싱 ===
@@ -189,6 +299,14 @@ export function parseSubAgentJsonl(entries: JsonlEntry[]): StoryEvent[] {
   for (const entry of entries) {
     if (entry.type === 'assistant' && Array.isArray(entry.message?.content)) {
       for (const block of entry.message!.content as ContentBlock[]) {
+        if (block.type === 'thinking' && block.thinking && block.thinking !== '') {
+          events.push({
+            uuid: entry.uuid + '-thinking',
+            type: 'thinking',
+            timestamp: entry.timestamp,
+            thinkingText: block.thinking,
+          });
+        }
         if (block.type === 'text' && block.text) {
           events.push({
             uuid: entry.uuid + '-text',

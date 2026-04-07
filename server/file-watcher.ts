@@ -2,7 +2,7 @@ import { watch, statSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import type { FSWatcher } from 'fs';
 import type { DataStore } from './data-store';
-import { readJsonlFromOffset, readSubAgentMeta, parseSubAgentJsonl, readJsonlFile, parseMainJsonl } from './jsonl-parser';
+import { readJsonlFromOffset, readSubAgentMeta, parseSubAgentJsonl, readJsonlFile, parseMainJsonl, parseMainEntryToEvents } from './jsonl-parser';
 import type { StoryEvent } from './types';
 
 export class FileWatcher {
@@ -129,8 +129,21 @@ export class FileWatcher {
     if (entries.length === 0) return;
 
     if (tag === 'main' && this.watchedSessionId) {
-      // 메인 JSONL 변경 → 캐시 무효화 + 새 태스크/에이전트 감지
       this.store.invalidateSession(this.watchedSessionId);
+
+      // 새 엔트리들을 main StoryEvent로 변환 + 브로드캐스트
+      for (const entry of entries) {
+        const events = parseMainEntryToEvents(entry);
+        for (const event of events) {
+          this.store.broadcast({
+            type: 'main_event',
+            sessionId: this.watchedSessionId,
+            data: event,
+          });
+        }
+      }
+
+      // 기존 session_updated도 유지
       this.store.broadcast({
         type: 'session_updated',
         sessionId: this.watchedSessionId,

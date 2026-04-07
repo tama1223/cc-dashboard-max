@@ -165,6 +165,7 @@ export function loadSessionDetail(
     isActive,
     tasks: parsed.tasks,
     subagents,
+    mainEvents: parsed.mainEvents,
   };
 }
 
