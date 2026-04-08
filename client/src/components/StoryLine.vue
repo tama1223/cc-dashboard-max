@@ -40,6 +40,7 @@ watch(
         v-for="event in agent.events"
         :key="event.uuid"
         :event="event"
+        :is-sub-agent="true"
       />
     </div>
   </div>

@@ -2,8 +2,9 @@
 import { ref } from 'vue';
 import type { StoryEvent } from '../types';
 
-defineProps<{
+const props = defineProps<{
   event: StoryEvent;
+  isSubAgent?: boolean;
 }>();
 
 const expanded = ref(false);
@@ -146,16 +147,22 @@ function truncateResult(text: string): string {
     </div>
   </div>
 
-  <!-- User Message -->
+  <!-- User Message / Prompt -->
   <div v-else-if="event.type === 'user_message'" class="flex gap-2 py-1.5">
     <span class="text-xs text-gray-600 shrink-0 w-16 text-right font-mono">
       {{ formatTime(event.timestamp) }}
     </span>
-    <div class="flex-1 rounded bg-green-950/30 border border-green-900/30 px-3 py-1.5">
+    <div class="flex-1 rounded px-3 py-1.5"
+      :class="isSubAgent
+        ? 'bg-cyan-950/30 border border-cyan-900/30'
+        : 'bg-green-950/30 border border-green-900/30'"
+    >
       <div class="flex items-center gap-1.5 mb-0.5">
-        <span class="text-xs font-bold text-green-400">You</span>
+        <span class="text-xs font-bold" :class="isSubAgent ? 'text-cyan-400' : 'text-green-400'">
+          {{ isSubAgent ? 'Prompt' : 'You' }}
+        </span>
       </div>
-      <div class="text-xs text-green-300 whitespace-pre-wrap">{{ event.text }}</div>
+      <div class="text-xs whitespace-pre-wrap" :class="isSubAgent ? 'text-cyan-300' : 'text-green-300'">{{ event.text }}</div>
     </div>
   </div>
 
