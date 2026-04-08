@@ -193,13 +193,23 @@ export function parseMainEntryToEvents(entry: JsonlEntry): StoryEvent[] {
   // 서브에이전트(사이드체인) 메시지는 main 스토리라인에 포함하지 않음
   if (entry.isSidechain) return [];
 
-  // user 타입 + content가 문자열 (사용자 프롬프트)
+  // user 타입 + content가 문자열 (사용자 프롬프트 또는 시스템 주입 메시지)
   if (entry.type === 'user' && typeof entry.message?.content === 'string') {
+    const content = entry.message.content;
+    // task-notification, command-name 등 시스템 주입 메시지는 system으로 분류
+    if (content.includes('<task-notification>') || content.includes('<command-name>')) {
+      return [{
+        type: 'system',
+        uuid: entry.uuid,
+        timestamp: entry.timestamp,
+        text: content.includes('<task-notification>') ? '[Agent Task Notification]' : '[Command]',
+      }];
+    }
     return [{
       type: 'user_message',
       uuid: entry.uuid,
       timestamp: entry.timestamp,
-      text: entry.message.content,
+      text: content,
     }];
   }
 
