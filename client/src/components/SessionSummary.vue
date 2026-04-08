@@ -3,6 +3,7 @@ defineProps<{
   summary: string;
   loading: boolean;
   visible: boolean;
+  sessionSlug: string;
 }>();
 
 const emit = defineEmits<{
@@ -16,7 +17,9 @@ const emit = defineEmits<{
     <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-[700px] max-h-[80vh] flex flex-col">
       <!-- 헤더 -->
       <div class="px-5 py-3 border-b border-gray-800 flex items-center justify-between shrink-0">
-        <h3 class="text-sm font-bold text-yellow-400">Session Summary</h3>
+        <h3 class="text-sm font-bold text-yellow-400">Session Summary
+          <span v-if="sessionSlug" class="ml-2 font-normal text-gray-400">{{ sessionSlug }}</span>
+        </h3>
         <button @click="emit('close')" class="text-gray-500 hover:text-gray-300 text-lg">&times;</button>
       </div>
 

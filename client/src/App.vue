@@ -162,6 +162,7 @@ watch(selectedSessionId, (id) => {
       :summary="sessionSummary"
       :loading="summaryLoading"
       :visible="showSummary"
+      :session-slug="sessionDetail?.slug || ''"
       @close="showSummary = false"
       @generate="fetchSummary()"
     />
