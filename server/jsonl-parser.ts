@@ -297,6 +297,20 @@ export function parseSubAgentJsonl(entries: JsonlEntry[]): StoryEvent[] {
   const events: StoryEvent[] = [];
 
   for (const entry of entries) {
+    // 서브에이전트 초기 prompt (첫 user 메시지, 문자열 content)
+    if (
+      entry.type === 'user' &&
+      entry.message?.role === 'user' &&
+      typeof entry.message.content === 'string'
+    ) {
+      events.push({
+        uuid: entry.uuid + '-prompt',
+        type: 'user_message',
+        timestamp: entry.timestamp,
+        text: entry.message.content,
+      });
+    }
+
     if (entry.type === 'assistant' && Array.isArray(entry.message?.content)) {
       for (const block of entry.message!.content as ContentBlock[]) {
         if (block.type === 'thinking' && block.thinking && block.thinking !== '') {

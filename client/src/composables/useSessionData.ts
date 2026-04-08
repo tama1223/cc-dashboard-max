@@ -113,9 +113,14 @@ export function useSessionData() {
     }
   }
 
-  function handleSessionUpdated(sessionId: string) {
+  async function handleSessionUpdated(sessionId: string) {
     if (selectedSessionId.value === sessionId) {
-      selectSession(sessionId); // 리로드
+      // 세션 데이터만 갱신 (요약은 유지)
+      try {
+        const res = await fetch(`${API_BASE}/session/${sessionId}`);
+        sessionDetail.value = await res.json();
+        mainStoryEvents.value = sessionDetail.value?.mainEvents || [];
+      } catch {}
     }
   }
 
