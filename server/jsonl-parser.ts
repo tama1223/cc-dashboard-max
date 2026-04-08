@@ -312,6 +312,7 @@ export function parseSubAgentJsonl(entries: JsonlEntry[]): StoryEvent[] {
     }
 
     if (entry.type === 'assistant' && Array.isArray(entry.message?.content)) {
+      const isFinalResponse = entry.message?.stop_reason === 'end_turn';
       for (const block of entry.message!.content as ContentBlock[]) {
         if (block.type === 'thinking' && block.thinking && block.thinking !== '') {
           events.push({
@@ -324,7 +325,7 @@ export function parseSubAgentJsonl(entries: JsonlEntry[]): StoryEvent[] {
         if (block.type === 'text' && block.text) {
           events.push({
             uuid: entry.uuid + '-text',
-            type: 'thought',
+            type: isFinalResponse ? 'response' : 'thought',
             timestamp: entry.timestamp,
             text: block.text,
           });

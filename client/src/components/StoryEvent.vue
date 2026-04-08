@@ -166,6 +166,31 @@ function truncateResult(text: string): string {
     </div>
   </div>
 
+  <!-- Response (서브에이전트 최종 응답) -->
+  <div v-else-if="event.type === 'response'" class="flex gap-2 py-1.5">
+    <span class="text-xs text-gray-600 shrink-0 w-16 text-right font-mono">
+      {{ formatTime(event.timestamp) }}
+    </span>
+    <div
+      class="flex-1 rounded bg-emerald-950/30 border border-emerald-900/30 px-3 py-1.5 cursor-pointer"
+      @click="expanded = !expanded"
+    >
+      <div class="flex items-center gap-1.5 mb-0.5">
+        <span class="text-xs font-bold text-emerald-400">Response</span>
+        <span class="text-xs text-gray-500">
+          ({{ (event.text || '').length }} chars)
+        </span>
+        <span class="text-xs text-gray-600 ml-auto">{{ expanded ? '▼' : '▶' }}</span>
+      </div>
+      <div v-if="expanded" class="text-xs text-emerald-300 whitespace-pre-wrap max-h-96 overflow-y-auto">
+        {{ event.text }}
+      </div>
+      <div v-else class="text-xs text-emerald-400/60 mt-0.5 truncate">
+        {{ (event.text || '').substring(0, 150) }}{{ (event.text || '').length > 150 ? '...' : '' }}
+      </div>
+    </div>
+  </div>
+
   <!-- Agent Spawn -->
   <div v-else-if="event.type === 'agent_spawn'" class="flex gap-2 py-1">
     <span class="text-xs text-gray-600 shrink-0 w-16 text-right font-mono">

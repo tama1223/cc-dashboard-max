@@ -56,7 +56,7 @@ export interface SubAgentDetail extends SubAgentSummary {
 
 export interface StoryEvent {
   uuid: string;
-  type: 'thought' | 'tool_use' | 'tool_result' | 'system' | 'thinking' | 'user_message' | 'agent_spawn' | 'agent_result';
+  type: 'thought' | 'tool_use' | 'tool_result' | 'system' | 'thinking' | 'user_message' | 'agent_spawn' | 'agent_result' | 'response';
   timestamp: string;
   text?: string;
   toolName?: string;
