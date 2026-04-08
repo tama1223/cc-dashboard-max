@@ -90,6 +90,31 @@ function buildMainSummaryText(session: SessionDetail): string {
     : text;
 }
 
+export async function summarizeAgent(agent: SubAgentDetail): Promise<string> {
+  const agentText = buildAgentSummaryText(agent);
+
+  const prompt = `다음은 Claude Code 서브에이전트(${agent.agentType})의 활동 기록이다.
+이 에이전트의 설명: "${agent.description}"
+
+이 에이전트가 한 일을 한국어로 간결하게 요약해줘 (3~5줄):
+- 무슨 작업을 받았는지
+- 어떻게 수행했는지 (핵심 도구/파일만)
+- 문제가 있었으면 뭐였는지
+- 최종 결과
+
+---
+${agentText}`;
+
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 500,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const textBlock = response.content.find((b) => b.type === 'text');
+  return textBlock?.text || '요약 생성 실패';
+}
+
 function buildAgentSummaryText(agent: SubAgentDetail): string {
   const lines: string[] = [];
   for (const event of agent.events) {

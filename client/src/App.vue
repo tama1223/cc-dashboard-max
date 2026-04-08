@@ -141,6 +141,7 @@ watch(selectedSessionId, (id) => {
         <StoryLine
           v-else-if="viewTarget === 'subagent' && agentDetail"
           :agent="agentDetail"
+          :session-id="selectedSessionId"
           class="flex-1"
         />
         <div

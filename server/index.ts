@@ -1,6 +1,6 @@
 import { DataStore } from './data-store';
 import { FileWatcher } from './file-watcher';
-import { summarizeSession } from './summarizer';
+import { summarizeSession, summarizeAgent } from './summarizer';
 
 const PORT = 4002;
 
@@ -128,6 +128,24 @@ async function handleApi(pathname: string, req: Request): Promise<Response> {
       return json({ summary });
     } catch (err: any) {
       console.error(`[Summarize] Error:`, err);
+      return json({ error: err.message || 'Summarization failed' }, 500);
+    }
+  }
+
+  // GET /api/summarize-agent/:sessionId/:agentId
+  const summarizeAgentMatch = pathname.match(/^\/api\/summarize-agent\/([^/]+)\/([^/]+)$/);
+  if (summarizeAgentMatch) {
+    const [, sessionId, agentId] = summarizeAgentMatch;
+    const agentDetail = store.getSubAgentDetail(sessionId, agentId);
+    if (!agentDetail) return json({ error: 'Agent not found' }, 404);
+
+    try {
+      console.log(`[SummarizeAgent] ${agentDetail.agentType}: ${agentDetail.description}`);
+      const summary = await summarizeAgent(agentDetail);
+      console.log(`[SummarizeAgent] Success, ${summary.length} chars`);
+      return json({ summary });
+    } catch (err: any) {
+      console.error(`[SummarizeAgent] Error:`, err);
       return json({ error: err.message || 'Summarization failed' }, 500);
     }
   }
