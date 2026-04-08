@@ -6,5 +6,8 @@
     "dev:server": "bun run server/index.ts",
     "dev:client": "cd client && bun run dev",
     "dev": "bun run dev:server & bun run dev:client"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.85.0"
   }
 }

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import SessionList from './components/SessionList.vue';
 import TaskList from './components/TaskList.vue';
 import TaskDetail from './components/TaskDetail.vue';
 import StoryLine from './components/StoryLine.vue';
 import MainStoryLine from './components/MainStoryLine.vue';
+import SessionSummary from './components/SessionSummary.vue';
 import { useSessionData } from './composables/useSessionData';
 import { useWebSocket } from './composables/useWebSocket';
 
@@ -27,7 +28,12 @@ const {
   appendMainEvent,
   selectMain,
   handleSessionUpdated,
+  sessionSummary,
+  summaryLoading,
+  fetchSummary,
 } = useSessionData();
+
+const showSummary = ref(false);
 
 const { connected, connect, subscribe } = useWebSocket();
 
@@ -63,7 +69,7 @@ watch(selectedSessionId, (id) => {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col">
+  <div class="h-screen flex flex-col relative">
     <!-- 헤더 -->
     <header class="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center gap-3 shrink-0">
       <h1 class="text-sm font-bold text-blue-400">CC Agent Dashboard Max</h1>
@@ -84,6 +90,14 @@ watch(selectedSessionId, (id) => {
           {{ p.hash.replace(/^[A-Z]--/, '').replaceAll('-', '/') }} ({{ p.sessionCount }})
         </option>
       </select>
+
+      <button
+        v-if="sessionDetail"
+        @click="showSummary = true"
+        class="text-xs bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 px-2 py-1 rounded border border-yellow-700/50 transition-colors"
+      >
+        Summary
+      </button>
     </header>
 
     <!-- 메인 콘텐츠 -->
@@ -143,5 +157,13 @@ watch(selectedSessionId, (id) => {
         </div>
       </div>
     </div>
+
+    <SessionSummary
+      :summary="sessionSummary"
+      :loading="summaryLoading"
+      :visible="showSummary"
+      @close="showSummary = false"
+      @generate="fetchSummary()"
+    />
   </div>
 </template>

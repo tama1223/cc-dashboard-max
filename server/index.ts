@@ -1,5 +1,6 @@
 import { DataStore } from './data-store';
 import { FileWatcher } from './file-watcher';
+import { summarizeSession } from './summarizer';
 
 const PORT = 4002;
 
@@ -64,7 +65,7 @@ store.subscribe((message) => {
   }
 });
 
-function handleApi(pathname: string, req: Request): Response {
+async function handleApi(pathname: string, req: Request): Promise<Response> {
   // GET /api/projects
   if (pathname === '/api/projects') {
     store.invalidateAll();
@@ -103,6 +104,28 @@ function handleApi(pathname: string, req: Request): Response {
     const detail = store.getSubAgentDetail(subagentMatch[1], subagentMatch[2]);
     if (!detail) return json({ error: 'SubAgent not found' }, 404);
     return json(detail);
+  }
+
+  // GET /api/summarize/:sessionId
+  const summarizeMatch = pathname.match(/^\/api\/summarize\/([^/]+)$/);
+  if (summarizeMatch) {
+    const sessionId = summarizeMatch[1];
+    const detail = store.getSessionDetail(sessionId);
+    if (!detail) return json({ error: 'Session not found' }, 404);
+
+    // 모든 subagent detail 로드
+    const subagentDetails = [];
+    for (const sa of detail.subagents) {
+      const saDetail = store.getSubAgentDetail(sessionId, sa.agentId);
+      if (saDetail) subagentDetails.push(saDetail);
+    }
+
+    try {
+      const summary = await summarizeSession(detail, subagentDetails);
+      return json({ summary });
+    } catch (err: any) {
+      return json({ error: err.message || 'Summarization failed' }, 500);
+    }
   }
 
   return json({ error: 'Not found' }, 404);

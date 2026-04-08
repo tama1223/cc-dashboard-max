@@ -12,6 +12,8 @@ const agentDetail = ref<SubAgentDetail | null>(null);
 const loading = ref(false);
 const mainStoryEvents = ref<StoryEvent[]>([]);
 const viewTarget = ref<'main' | 'subagent'>('main');
+const sessionSummary = ref<string>('');
+const summaryLoading = ref(false);
 
 const selectedProject = computed(() =>
   projects.value.find((p) => p.hash === selectedProjectHash.value) || null
@@ -37,6 +39,7 @@ export function useSessionData() {
     selectedSessionId.value = sessionId;
     selectedAgentId.value = '';
     agentDetail.value = null;
+    sessionSummary.value = '';
     loading.value = true;
 
     try {
@@ -90,6 +93,26 @@ export function useSessionData() {
     mainStoryEvents.value.push(event);
   }
 
+  async function fetchSummary() {
+    if (!selectedSessionId.value) return;
+    summaryLoading.value = true;
+    sessionSummary.value = '';
+
+    try {
+      const res = await fetch(`${API_BASE}/summarize/${selectedSessionId.value}`);
+      const data = await res.json();
+      if (data.summary) {
+        sessionSummary.value = data.summary;
+      } else {
+        sessionSummary.value = data.error || '요약 생성 실패';
+      }
+    } catch (err) {
+      sessionSummary.value = '요약 요청 중 오류가 발생했습니다.';
+    } finally {
+      summaryLoading.value = false;
+    }
+  }
+
   function handleSessionUpdated(sessionId: string) {
     if (selectedSessionId.value === sessionId) {
       selectSession(sessionId); // 리로드
@@ -115,5 +138,8 @@ export function useSessionData() {
     appendMainEvent,
     selectMain,
     handleSessionUpdated,
+    sessionSummary,
+    summaryLoading,
+    fetchSummary,
   };
 }
