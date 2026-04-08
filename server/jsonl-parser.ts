@@ -196,14 +196,15 @@ export function parseMainEntryToEvents(entry: JsonlEntry): StoryEvent[] {
   // user 타입 + content가 문자열 (사용자 프롬프트 또는 시스템 주입 메시지)
   if (entry.type === 'user' && typeof entry.message?.content === 'string') {
     const content = entry.message.content;
-    // task-notification, command-name 등 시스템 주입 메시지는 system으로 분류
-    if (content.includes('<task-notification>') || content.includes('<command-name>')) {
-      return [{
-        type: 'system',
-        uuid: entry.uuid,
-        timestamp: entry.timestamp,
-        text: content.includes('<task-notification>') ? '[Agent Task Notification]' : '[Command]',
-      }];
+    // 시스템 주입 메시지 필터링
+    if (
+      content.includes('<task-notification>') ||
+      content.includes('<command-name>') ||
+      content.includes('<local-command-caveat>') ||
+      content.includes('<local-command-stdout>') ||
+      content.includes('<system-reminder>')
+    ) {
+      return []; // 시스템 주입 메시지는 무시 (noisy)
     }
     return [{
       type: 'user_message',
@@ -289,11 +290,23 @@ export function parseMainEntryToEvents(entry: JsonlEntry): StoryEvent[] {
 
   // system 타입
   if (entry.type === 'system') {
+    const sysText = (entry as any).content || entry.subtype || 'system';
+    // noisy system 이벤트 필터링
+    if (
+      typeof sysText === 'string' && (
+        sysText.includes('stop_hook_summary') ||
+        sysText.includes('turn_duration') ||
+        sysText.includes('<local-command') ||
+        sysText.includes('<command-name>')
+      )
+    ) {
+      return [];
+    }
     return [{
       type: 'system',
       uuid: entry.uuid,
       timestamp: entry.timestamp,
-      text: (entry as any).content || entry.subtype || 'system',
+      text: sysText,
     }];
   }
 
