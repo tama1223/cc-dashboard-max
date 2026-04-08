@@ -12,6 +12,7 @@ const wsClients = new Set<any>();
 
 const server = Bun.serve({
   port: PORT,
+  idleTimeout: 120, // Claude API 호출 대기 (기본 10초 → 120초)
   fetch(req, server) {
     const url = new URL(req.url);
 
@@ -121,9 +122,12 @@ async function handleApi(pathname: string, req: Request): Promise<Response> {
     }
 
     try {
+      console.log(`[Summarize] Starting for session ${sessionId}, ${detail.mainEvents.length} main events, ${subagentDetails.length} subagents`);
       const summary = await summarizeSession(detail, subagentDetails);
+      console.log(`[Summarize] Success, ${summary.length} chars`);
       return json({ summary });
     } catch (err: any) {
+      console.error(`[Summarize] Error:`, err);
       return json({ error: err.message || 'Summarization failed' }, 500);
     }
   }
