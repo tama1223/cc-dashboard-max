@@ -21,6 +21,7 @@ const emit = defineEmits<{
       <span class="text-xs text-gray-600">
         {{ session.tasks.length }} tasks / {{ session.subagents.length }} agents
       </span>
+      <span class="text-xs font-mono text-gray-600 select-all">{{ session.id }}</span>
     </div>
 
     <!-- 서브에이전트 카드 그리드 -->
