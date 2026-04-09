@@ -65,6 +65,7 @@ watch(
       >
         {{ summaryLoading ? '...' : 'Summary' }}
       </button>
+      <span class="text-xs font-mono text-gray-600 select-all">{{ agent.agentId }}</span>
       <span class="ml-auto text-xs text-gray-600">
         {{ agent.events.length }} events
       </span>
