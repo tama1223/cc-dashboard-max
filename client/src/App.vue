@@ -72,7 +72,7 @@ watch(selectedSessionId, (id) => {
   <div class="h-screen flex flex-col relative">
     <!-- 헤더 -->
     <header class="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center gap-3 shrink-0">
-      <h1 class="text-sm font-bold text-blue-400">CC Agent Dashboard Max</h1>
+      <h1 class="text-sm font-bold text-blue-400">Agent Dashboard</h1>
       <div
         class="w-2 h-2 rounded-full"
         :class="connected ? 'bg-green-500' : 'bg-red-500'"
