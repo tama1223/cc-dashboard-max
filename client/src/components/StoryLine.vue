@@ -80,7 +80,7 @@ watch(
         <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
         <span class="text-xs text-gray-400">요약 생성 중...</span>
       </div>
-      <div v-else class="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">
+      <div v-else class="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">
         {{ agentSummary }}
       </div>
     </div>
