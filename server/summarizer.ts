@@ -93,21 +93,41 @@ function buildMainSummaryText(session: SessionDetail): string {
 export async function summarizeAgent(agent: SubAgentDetail): Promise<string> {
   const agentText = buildAgentSummaryText(agent);
 
-  const prompt = `다음은 Claude Code 서브에이전트(${agent.agentType})의 활동 기록이다.
-이 에이전트의 설명: "${agent.description}"
+  const prompt = `다음은 Claude Code 서브에이전트의 전체 활동 기록이다.
 
-이 에이전트가 한 일을 한국어로 간결하게 요약해줘 (3~5줄):
-- 무슨 작업을 받았는지
-- 어떻게 수행했는지 (핵심 도구/파일만)
-- 문제가 있었으면 뭐였는지
-- 최종 결과
+에이전트 타입: ${agent.agentType}
+설명: "${agent.description}"
+상태: ${agent.status}
+총 이벤트: ${agent.events.length}개
+${agent.totalTokens ? `토큰 사용: ${agent.totalTokens}` : ''}
+${agent.totalToolUseCount ? `도구 사용 횟수: ${agent.totalToolUseCount}` : ''}
+${agent.totalDurationMs ? `실행 시간: ${(agent.totalDurationMs / 1000).toFixed(1)}초` : ''}
+
+아래 활동 기록을 분석하여 한국어로 **상세하게** 요약해줘:
+
+## 요약 형식
+
+### 받은 작업
+이 에이전트가 어떤 지시를 받았는지 구체적으로 설명
+
+### 수행 과정
+1. 어떤 파일을 읽었는지
+2. 어떤 파일을 수정/생성했는지
+3. 어떤 도구를 사용했는지 (Bash 명령, Grep 검색 등)
+4. 핵심 로직이나 변경 사항
+
+### 문제 및 시행착오
+에러가 있었으면 무엇이었고 어떻게 해결했는지. 없었으면 "특별한 문제 없이 완료"
+
+### 최종 결과
+무엇이 달성되었는지, 변경된 파일 목록
 
 ---
 ${agentText}`;
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 500,
+    model: 'claude-opus-4-20250514',
+    max_tokens: 2000,
     messages: [{ role: 'user', content: prompt }],
   });
 
@@ -119,22 +139,26 @@ function buildAgentSummaryText(agent: SubAgentDetail): string {
   const lines: string[] = [];
   for (const event of agent.events) {
     switch (event.type) {
+      case 'user_message':
+        lines.push(`[Prompt] ${(event.text || '').substring(0, 2000)}`);
+        break;
+      case 'response':
+        lines.push(`[Response] ${(event.text || '').substring(0, 2000)}`);
+        break;
       case 'thought':
-        lines.push(`[Think] ${(event.text || '').substring(0, 200)}`);
+        lines.push(`[Think] ${(event.text || '').substring(0, 500)}`);
         break;
       case 'thinking':
-        lines.push(
-          `[Thinking] ${(event.thinkingText || '').substring(0, 150)}`
-        );
+        lines.push(`[Thinking] ${(event.thinkingText || '').substring(0, 500)}`);
         break;
       case 'tool_use':
-        lines.push(
-          `[Tool] ${event.toolName}: ${JSON.stringify(event.toolInput || {}).substring(0, 150)}`
-        );
+        lines.push(`[Tool] ${event.toolName}: ${JSON.stringify(event.toolInput || {}).substring(0, 500)}`);
         break;
       case 'tool_result':
         if (event.isError) {
-          lines.push(`[Error] ${(event.content || '').substring(0, 200)}`);
+          lines.push(`[Error] ${(event.content || '').substring(0, 500)}`);
+        } else {
+          lines.push(`[Result] ${(event.content || '').substring(0, 200)}`);
         }
         break;
       case 'system':
@@ -143,7 +167,7 @@ function buildAgentSummaryText(agent: SubAgentDetail): string {
     }
   }
   const text = lines.join('\n');
-  return text.length > 3000
-    ? text.substring(0, 3000) + '\n... (truncated)'
+  return text.length > 15000
+    ? text.substring(0, 15000) + '\n... (truncated)'
     : text;
 }
