@@ -110,20 +110,16 @@ function quickScanJsonl(filePath: string): {
     } catch {}
   }
 
-  // 첫 2KB에서 startTime 추출
-  const headSize = Math.min(fstat.size, 2048);
+  // 첫 엔트리에서 startTime 추출 — regex로 첫 timestamp 찾기 (첫 줄이 매우 클 수 있음, 예: subagent prompt 13KB+)
+  // 파일이 작으면 전체 읽고, 크면 처음 64KB만 읽어서 regex 매칭
+  const headSize = Math.min(fstat.size, 65536);
   const headBuf = Buffer.alloc(headSize);
   readSync(fd, headBuf, 0, headSize, 0);
   closeSync(fd);
 
-  const headLines = headBuf.toString('utf-8').split('\n');
-  for (const line of headLines) {
-    if (!line.trim()) continue;
-    try {
-      const obj = JSON.parse(line);
-      if (obj.timestamp) { startTime = obj.timestamp; break; }
-    } catch {}
-  }
+  const headText = headBuf.toString('utf-8');
+  const tsMatch = headText.match(/"timestamp":"([^"]+)"/);
+  if (tsMatch) startTime = tsMatch[1];
 
   return { slug, startTime, lastActivity };
 }
