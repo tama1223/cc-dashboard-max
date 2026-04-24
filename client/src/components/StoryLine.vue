@@ -48,10 +48,20 @@ watch(
     showSummary.value = false;
   }
 );
+
+function scrollToTop() {
+  container.value?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function scrollToBottom() {
+  if (container.value) {
+    container.value.scrollTo({ top: container.value.scrollHeight, behavior: 'smooth' });
+  }
+}
 </script>
 
 <template>
-  <div class="flex flex-col overflow-hidden">
+  <div class="flex flex-col overflow-hidden relative">
     <!-- 헤더 -->
     <div class="px-4 py-2 border-b border-gray-800 bg-gray-900/50 shrink-0 flex items-center gap-2">
       <span class="text-xs font-mono font-bold text-blue-400">
@@ -94,6 +104,20 @@ watch(
         :event="event"
         :is-sub-agent="true"
       />
+    </div>
+
+    <!-- 스크롤 이동 버튼 -->
+    <div class="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
+      <button
+        @click="scrollToTop"
+        title="맨 위로"
+        class="w-9 h-9 rounded-full bg-gray-800/80 hover:bg-gray-700 border border-gray-700 text-gray-300 text-lg shadow-lg backdrop-blur transition"
+      >↑</button>
+      <button
+        @click="scrollToBottom"
+        title="맨 아래로"
+        class="w-9 h-9 rounded-full bg-gray-800/80 hover:bg-gray-700 border border-gray-700 text-gray-300 text-lg shadow-lg backdrop-blur transition"
+      >↓</button>
     </div>
   </div>
 </template>
