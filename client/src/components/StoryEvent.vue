@@ -8,6 +8,7 @@ const props = defineProps<{
 }>();
 
 const expanded = ref(false);
+const copied = ref(false);
 
 function formatTime(iso: string): string {
   if (!iso) return '';
@@ -53,6 +54,31 @@ function truncateResult(text: string): string {
   if (lines.length <= 3) return text;
   return lines.slice(0, 3).join('\n');
 }
+
+function getCopyText(): string {
+  const e = props.event;
+  switch (e.type) {
+    case 'thought': return e.text || '';
+    case 'tool_use': return `${e.toolName}: ${JSON.stringify(e.toolInput || {}, null, 2)}`;
+    case 'tool_result': return e.content || '';
+    case 'system': return e.text || '';
+    case 'thinking': return e.thinkingText || '';
+    case 'user_message': return e.text || '';
+    case 'response': return e.text || '';
+    case 'agent_spawn': return `Spawned ${e.agentType || ''}: ${e.toolInput?.description || ''}\n\nPrompt:\n${e.toolInput?.prompt || ''}`;
+    case 'agent_result': return e.content || '';
+    default: return '';
+  }
+}
+
+async function copyToClipboard(ev: Event) {
+  ev.stopPropagation();
+  try {
+    await navigator.clipboard.writeText(getCopyText());
+    copied.value = true;
+    setTimeout(() => { copied.value = false; }, 1200);
+  } catch {}
+}
 </script>
 
 <template>
@@ -61,8 +87,11 @@ function truncateResult(text: string): string {
     <span class="text-xs text-gray-600 shrink-0 w-16 text-right font-mono">
       {{ formatTime(event.timestamp) }}
     </span>
-    <div class="flex-1 rounded bg-blue-950/30 border border-blue-900/30 px-3 py-1.5">
-      <div class="text-xs text-blue-300 whitespace-pre-wrap">{{ event.text }}</div>
+    <div class="flex-1 rounded bg-blue-950/30 border border-blue-900/30 px-3 py-1.5 relative group">
+      <button @click.stop="copyToClipboard" class="absolute top-1 right-1 text-xs px-1.5 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
+        {{ copied ? '✓' : '📋' }}
+      </button>
+      <div class="text-xs text-blue-300 whitespace-pre-wrap pr-8">{{ event.text }}</div>
     </div>
   </div>
 
@@ -71,8 +100,11 @@ function truncateResult(text: string): string {
     <span class="text-xs text-gray-600 shrink-0 w-16 text-right font-mono">
       {{ formatTime(event.timestamp) }}
     </span>
-    <div class="flex-1 rounded bg-orange-950/20 border border-orange-900/20 px-3 py-1.5">
-      <div class="flex items-center gap-1.5">
+    <div class="flex-1 rounded bg-orange-950/20 border border-orange-900/20 px-3 py-1.5 relative group">
+      <button @click.stop="copyToClipboard" class="absolute top-1 right-1 text-xs px-1.5 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
+        {{ copied ? '✓' : '📋' }}
+      </button>
+      <div class="flex items-center gap-1.5 pr-8">
         <span>{{ toolIcon(event.toolName || '') }}</span>
         <span class="text-xs font-mono font-bold text-orange-400">
           {{ event.toolName }}
@@ -88,13 +120,16 @@ function truncateResult(text: string): string {
   <div v-else-if="event.type === 'tool_result'" class="flex gap-2 py-0.5">
     <span class="text-xs text-gray-600 shrink-0 w-16" />
     <div
-      class="flex-1 rounded px-3 py-1 cursor-pointer"
+      class="flex-1 rounded px-3 py-1 cursor-pointer relative group"
       :class="event.isError
         ? 'bg-red-950/20 border border-red-900/30'
         : 'bg-gray-900/50 border border-gray-800/50'"
       @click="expanded = !expanded"
     >
-      <div class="flex items-center gap-1">
+      <button @click.stop="copyToClipboard" class="absolute top-1 right-1 text-xs px-1.5 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        {{ copied ? '✓' : '📋' }}
+      </button>
+      <div class="flex items-center gap-1 pr-8">
         <span class="text-xs text-gray-600">{{ expanded ? '▼' : '▶' }}</span>
         <span class="text-xs text-gray-500">
           {{ event.isError ? '❌ Error' : 'Result' }}
@@ -128,10 +163,13 @@ function truncateResult(text: string): string {
       {{ formatTime(event.timestamp) }}
     </span>
     <div
-      class="flex-1 rounded bg-purple-950/30 border border-purple-900/30 px-3 py-1.5 cursor-pointer"
+      class="flex-1 rounded bg-purple-950/30 border border-purple-900/30 px-3 py-1.5 cursor-pointer relative group"
       @click="expanded = !expanded"
     >
-      <div class="flex items-center gap-1.5">
+      <button @click.stop="copyToClipboard" class="absolute top-1 right-1 text-xs px-1.5 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        {{ copied ? '✓' : '📋' }}
+      </button>
+      <div class="flex items-center gap-1.5 pr-8">
         <span class="text-xs text-purple-400 font-bold">Thinking</span>
         <span class="text-xs text-gray-500">
           ({{ (event.thinkingText || '').length }} chars)
@@ -152,17 +190,20 @@ function truncateResult(text: string): string {
     <span class="text-xs text-gray-600 shrink-0 w-16 text-right font-mono">
       {{ formatTime(event.timestamp) }}
     </span>
-    <div class="flex-1 rounded px-3 py-1.5"
+    <div class="flex-1 rounded px-3 py-1.5 relative group"
       :class="isSubAgent
         ? 'bg-cyan-950/30 border border-cyan-900/30'
         : 'bg-green-950/30 border border-green-900/30'"
     >
+      <button @click.stop="copyToClipboard" class="absolute top-1 right-1 text-xs px-1.5 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
+        {{ copied ? '✓' : '📋' }}
+      </button>
       <div class="flex items-center gap-1.5 mb-0.5">
         <span class="text-xs font-bold" :class="isSubAgent ? 'text-cyan-400' : 'text-green-400'">
           {{ isSubAgent ? 'Prompt' : 'You' }}
         </span>
       </div>
-      <div class="text-xs whitespace-pre-wrap" :class="isSubAgent ? 'text-cyan-300' : 'text-green-300'">{{ event.text }}</div>
+      <div class="text-xs whitespace-pre-wrap pr-8" :class="isSubAgent ? 'text-cyan-300' : 'text-green-300'">{{ event.text }}</div>
     </div>
   </div>
 
@@ -172,10 +213,13 @@ function truncateResult(text: string): string {
       {{ formatTime(event.timestamp) }}
     </span>
     <div
-      class="flex-1 rounded bg-emerald-950/30 border border-emerald-900/30 px-3 py-1.5 cursor-pointer"
+      class="flex-1 rounded bg-emerald-950/30 border border-emerald-900/30 px-3 py-1.5 cursor-pointer relative group"
       @click="expanded = !expanded"
     >
-      <div class="flex items-center gap-1.5 mb-0.5">
+      <button @click.stop="copyToClipboard" class="absolute top-1 right-1 text-xs px-1.5 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        {{ copied ? '✓' : '📋' }}
+      </button>
+      <div class="flex items-center gap-1.5 mb-0.5 pr-8">
         <span class="text-xs font-bold text-emerald-400">Response</span>
         <span class="text-xs text-gray-500">
           ({{ (event.text || '').length }} chars)
@@ -196,8 +240,11 @@ function truncateResult(text: string): string {
     <span class="text-xs text-gray-600 shrink-0 w-16 text-right font-mono">
       {{ formatTime(event.timestamp) }}
     </span>
-    <div class="flex-1 rounded bg-amber-950/20 border border-amber-900/20 px-3 py-1.5">
-      <div class="flex items-center gap-1.5">
+    <div class="flex-1 rounded bg-amber-950/20 border border-amber-900/20 px-3 py-1.5 relative group">
+      <button @click.stop="copyToClipboard" class="absolute top-1 right-1 text-xs px-1.5 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
+        {{ copied ? '✓' : '📋' }}
+      </button>
+      <div class="flex items-center gap-1.5 pr-8">
         <span class="text-xs font-mono font-bold text-amber-400">
           Agent
         </span>
@@ -205,7 +252,7 @@ function truncateResult(text: string): string {
           Spawned {{ event.agentType || event.toolInput?.subagent_type || '' }}
         </span>
       </div>
-      <div v-if="event.toolInput?.description" class="text-xs text-gray-400 mt-0.5">
+      <div v-if="event.toolInput?.description" class="text-xs text-gray-400 mt-0.5 pr-8">
         {{ event.toolInput.description }}
       </div>
     </div>
@@ -217,10 +264,13 @@ function truncateResult(text: string): string {
       {{ formatTime(event.timestamp) }}
     </span>
     <div
-      class="flex-1 rounded bg-teal-950/20 border border-teal-900/20 px-3 py-1 cursor-pointer"
+      class="flex-1 rounded bg-teal-950/20 border border-teal-900/20 px-3 py-1 cursor-pointer relative group"
       @click="expanded = !expanded"
     >
-      <div class="flex items-center gap-1.5">
+      <button @click.stop="copyToClipboard" class="absolute top-1 right-1 text-xs px-1.5 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        {{ copied ? '✓' : '📋' }}
+      </button>
+      <div class="flex items-center gap-1.5 pr-8">
         <span class="text-xs text-gray-600">{{ expanded ? '▼' : '▶' }}</span>
         <span class="text-xs font-bold text-teal-400">
           Agent {{ event.agentType }} completed
