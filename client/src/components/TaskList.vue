@@ -23,6 +23,15 @@ function formatTime(iso: string): string {
   });
 }
 
+function formatDate(iso: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  if (isToday) return '오늘';
+  return d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+}
+
 function truncate(text: string, max: number): string {
   // command-name 태그 등 제거
   const cleaned = text.replace(/<[^>]+>/g, '').trim();
@@ -68,7 +77,7 @@ function statusIcon(status: string): string {
       Sub-Agents ({{ subagents.length }})
     </div>
 
-    <!-- 서브에이전트 목록 (시간순) -->
+    <!-- 서브에이전트 목록 (최신순) -->
     <div
       v-for="sa in subagents"
       :key="sa.agentId"
@@ -90,7 +99,7 @@ function statusIcon(status: string): string {
         {{ sa.description }}
       </div>
       <div class="flex gap-3 text-xs text-gray-600 mt-0.5">
-        <span>{{ formatTime(sa.startTime) }}</span>
+        <span>{{ formatDate(sa.startTime) }} {{ formatTime(sa.startTime) }}</span>
         <span v-if="sa.totalTokens">{{ (sa.totalTokens / 1000).toFixed(1) }}k tok</span>
         <span v-if="sa.totalToolUseCount">{{ sa.totalToolUseCount }} tools</span>
         <span v-if="sa.totalDurationMs">{{ (sa.totalDurationMs / 1000).toFixed(0) }}s</span>

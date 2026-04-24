@@ -223,9 +223,9 @@ function loadSubAgentSummaries(
     });
   }
 
-  // 시작 시간순 정렬
+  // 최신순 정렬 (최근에 시작한 에이전트가 위에)
   summaries.sort(
-    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
   );
 
   return summaries;
