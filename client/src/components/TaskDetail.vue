@@ -15,8 +15,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="border-b border-gray-800 p-4 shrink-0" style="max-height: 35%">
-    <div class="flex items-center gap-2 mb-3">
+  <div class="border-b border-gray-800 p-4 h-full overflow-hidden flex flex-col">
+    <div class="flex items-center gap-2 mb-3 shrink-0">
       <h2 class="text-sm font-bold text-gray-300">{{ session.slug }}</h2>
       <span class="text-xs text-gray-600">
         {{ session.tasks.length }} tasks / {{ session.subagents.length }} agents
@@ -25,7 +25,7 @@ const emit = defineEmits<{
     </div>
 
     <!-- 서브에이전트 카드 그리드 -->
-    <div class="flex flex-wrap gap-2 overflow-y-auto" style="max-height: calc(100% - 2rem)">
+    <div class="flex flex-wrap gap-2 overflow-y-auto flex-1 min-h-0">
       <!-- Main Agent 카드 -->
       <div
         class="rounded-lg border bg-yellow-950/30 border-yellow-800 px-3 py-2 cursor-pointer transition-all min-w-48 max-w-64 hover:brightness-125"

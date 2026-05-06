@@ -35,6 +35,50 @@ const {
 
 const showSummary = ref(false);
 
+// 패널 크기 (px) — localStorage에 저장
+const leftWidth = ref(parseInt(localStorage.getItem('cc-leftWidth') || '280', 10));
+const taskDetailHeight = ref(parseInt(localStorage.getItem('cc-taskDetailHeight') || '180', 10));
+
+function startResizeLeft(e: MouseEvent) {
+  e.preventDefault();
+  const startX = e.clientX;
+  const startW = leftWidth.value;
+  const onMove = (ev: MouseEvent) => {
+    leftWidth.value = Math.max(180, Math.min(600, startW + ev.clientX - startX));
+  };
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    localStorage.setItem('cc-leftWidth', leftWidth.value.toString());
+  };
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function startResizeTop(e: MouseEvent) {
+  e.preventDefault();
+  const startY = e.clientY;
+  const startH = taskDetailHeight.value;
+  const onMove = (ev: MouseEvent) => {
+    taskDetailHeight.value = Math.max(60, Math.min(800, startH + ev.clientY - startY));
+  };
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    localStorage.setItem('cc-taskDetailHeight', taskDetailHeight.value.toString());
+  };
+  document.body.style.cursor = 'row-resize';
+  document.body.style.userSelect = 'none';
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
 const { connected, connect, subscribe } = useWebSocket();
 
 let pollTimer: ReturnType<typeof setInterval>;
@@ -103,7 +147,10 @@ watch(selectedSessionId, (id) => {
     <!-- 메인 콘텐츠 -->
     <div class="flex flex-1 overflow-hidden">
       <!-- 좌측 패널: 세션 + 태스크 -->
-      <div class="w-80 border-r border-gray-800 flex flex-col shrink-0 overflow-hidden">
+      <div
+        class="border-r border-gray-800 flex flex-col shrink-0 overflow-hidden"
+        :style="{ width: leftWidth + 'px' }"
+      >
         <SessionList
           :sessions="sessions"
           :selected-id="selectedSessionId"
@@ -120,15 +167,32 @@ watch(selectedSessionId, (id) => {
         />
       </div>
 
+      <!-- 좌우 리사이즈 핸들 -->
+      <div
+        class="w-1 bg-gray-800 hover:bg-blue-500 cursor-col-resize shrink-0 transition-colors"
+        @mousedown="startResizeLeft"
+      />
+
       <!-- 우측 패널: 태스크 상세 + 스토리라인 -->
-      <div class="flex-1 flex flex-col overflow-hidden">
-        <TaskDetail
+      <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+        <div
           v-if="sessionDetail"
-          :session="sessionDetail"
-          :selected-agent-id="selectedAgentId"
-          :main-event-count="mainStoryEvents.length"
-          @select-agent="selectAgent"
-          @select-main="selectMain"
+          class="shrink-0 overflow-hidden"
+          :style="{ height: taskDetailHeight + 'px' }"
+        >
+          <TaskDetail
+            :session="sessionDetail"
+            :selected-agent-id="selectedAgentId"
+            :main-event-count="mainStoryEvents.length"
+            @select-agent="selectAgent"
+            @select-main="selectMain"
+          />
+        </div>
+        <!-- 상하 리사이즈 핸들 -->
+        <div
+          v-if="sessionDetail"
+          class="h-1 bg-gray-800 hover:bg-blue-500 cursor-row-resize shrink-0 transition-colors"
+          @mousedown="startResizeTop"
         />
         <!-- Main 스토리라인 -->
         <MainStoryLine
