@@ -29,15 +29,16 @@ async function fetchAgentSummary() {
   }
 }
 
-// 새 이벤트 추가 시 자동 스크롤
+// 새 이벤트 추가 + 에이전트 전환 시 자동 맨 아래로 스크롤
 watch(
-  () => props.agent.events.length,
+  [() => props.agent.events.length, () => props.agent.agentId],
   async () => {
     await nextTick();
     if (container.value) {
       container.value.scrollTop = container.value.scrollHeight;
     }
-  }
+  },
+  { immediate: true }
 );
 
 // 에이전트 변경 시 요약 초기화

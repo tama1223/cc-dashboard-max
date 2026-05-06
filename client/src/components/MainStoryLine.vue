@@ -11,13 +11,14 @@ const props = defineProps<{
 const container = ref<HTMLElement | null>(null);
 
 watch(
-  () => props.events.length,
+  [() => props.events.length, () => props.session.id],
   async () => {
     await nextTick();
     if (container.value) {
       container.value.scrollTop = container.value.scrollHeight;
     }
-  }
+  },
+  { immediate: true }
 );
 
 function scrollToTop() {
